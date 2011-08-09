@@ -1,0 +1,12 @@
+{
+  "name": "rondo",
+  "description": "DOM library and application suite",
+  "author": "Christopher Jeffrey",
+  "version": "0.0.1",
+  "repository": "git://github.com/chjj/rondo.git",
+  "keywords": [ "dom", "app" ],
+  "dependencies": {
+    "uglify-js": "*",
+    "zest-js": "*"
+  }
+}

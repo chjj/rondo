@@ -1,0 +1,76 @@
+#!/usr/bin/env node
+
+/**
+ * Build
+ */
+
+var fs = require('fs')
+  , path = require('path');
+
+/**
+ * Uglify Options
+ */
+
+var options = { 
+  strict_semicolons: false,
+  mangle_options: { toplevel: true },
+  squeeze_options: { keep_comps: false }
+};
+
+/**
+ * Handle
+ */
+
+var preprocess = function(file) {
+  var str = fs.readFileSync(file, 'utf8')
+    , dir = path.dirname(file);
+
+  return str.replace(
+    /^ *\/* *#include +"([^"]+)" */gm, 
+    function(__, name) {
+      if (name[0] !== '/') {
+        name = path.join(dir, name);
+      }
+      return '\n' + preprocess(name) + '\n';
+    }
+  );
+};
+
+var main = function(dir, file) {
+  dir = path.join(path.resolve(__dirname, '..'), dir);
+
+  var out = preprocess(path.join(dir, 'index.js'));
+
+  out = ';(function() {\n' + out + '\n}).call(this);';
+
+  if (module.parent) {
+    return out;
+  }
+
+  if (path.extname(file) !== '.js') file += '.js';
+
+  fs.writeFileSync(file, out);
+
+  try {
+    file = file.replace(/(\.[^.]+)$/, '.min$1');
+    out = require('uglify-js')(out, options);
+    fs.writeFileSync(file, out);
+  } catch(e) {
+    if (e.message && e.message.indexOf('Cannot find') === 0) {
+      throw new 
+        Error('uglify-js not found, won\'t uglify.');
+    } else {
+      throw e;
+    }
+  }
+};
+
+/**
+ * Expose
+ */
+
+if (module.parent) {
+  module.exports = main;
+} else {
+  main.apply(null, process.argv.slice(2));
+}
